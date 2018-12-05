@@ -53,12 +53,15 @@
 #include "ns3/ipv4-static-routing-helper.h"
 #include "ns3/ipv4-list-routing-helper.h"
 #include "ns3/ipv4-nix-vector-helper.h"
+#include "ns3/delay-jitter-estimation.h"
 
 using namespace ns3;
 
 NetDeviceContainer ndc[100];
 NodeContainer nc[100];
-static void CalculateDelay()
+DelayJitterEstimation delayJitter;
+
+static void CalculateLen()
 {
   int max = -1;
   int tmp;
@@ -83,6 +86,23 @@ static void CalculateDelay()
   //std::cout << Simulator::Now ().GetSeconds ()<<" "<<max<<" "<<maxaddr<<std::endl;
   std::cout << max << std::endl;
 }
+
+static void
+CalculateDelay(Ptr<const Packet> p, const Address &address)
+{
+  static int k = 0;
+  k++;
+  delayJitter.RecordRx(p);
+  Time t = delayJitter.GetLastDelay();
+  std::cout <<"Delay: "<< Simulator::Now().GetSeconds() << "\t" << t.GetMilliSeconds() << std::endl;
+}
+
+static void
+TagTx(Ptr<const Packet> p)
+{
+  delayJitter.PrepareTx(p);
+}
+
 NS_LOG_COMPONENT_DEFINE("SJTU_CNPROJECT");
 std::vector<int> random_pair()
 {
@@ -254,7 +274,8 @@ int main(int argc, char *argv[])
   /////////////////////////////////////////////////////////////////////////////
   NS_LOG_INFO("creating sending");
   ApplicationContainer clientContainer;
-  UdpEchoClientHelper client(ipic[0].GetAddress(0), 1);
+  int port = 1;
+  UdpEchoClientHelper client(ipic[0].GetAddress(0), port);
   client.SetAttribute("MaxPackets", UintegerValue(10));
   client.SetAttribute("Interval", TimeValue(Seconds(0.00375)));
   client.SetAttribute("PacketSize", UintegerValue(210));
@@ -276,15 +297,32 @@ int main(int argc, char *argv[])
       clientContainer = client.Install(terminals.Get(host_pair[2 * current_pair]));
       clientContainer.Start(Seconds(current_time));
       clientContainer.Stop(Seconds(current_time + 0.1));
+      clientContainer.Get(0)->TraceConnectWithoutContext("Tx", MakeCallback(&TagTx));
     }
   }
 
-  int port = 1;
+  std::cout<<"########  "<<clientContainer.GetN()<<std::endl;
+
+  // for (i = 0; i < (int)clientContainer.GetN(); i++)
+  // {
+  //   clientContainer.Get(i)->TraceConnectWithoutContext("Tx", MakeCallback(&TagTx));
+  // }
+
   PacketSinkHelper sink("ns3::UdpSocketFactory",
                         InetSocketAddress(Ipv4Address::GetAny(), port));
   ApplicationContainer sinkApps = sink.Install(terminals);
   sinkApps.Start(Seconds(0.0));
   sinkApps.Stop(Seconds(120.0));
+
+  
+
+  for (i = 0; i < 50; i++)
+  {
+    sinkApps.Get(i)->TraceConnectWithoutContext("Rx", MakeCallback(&CalculateDelay));
+  }
+
+
+
   /*// Create the OnOff application to send UDP datagrams of size
   // 210 bytes at a rate of 448 Kb/s from n0 to n4
   NS_LOG_INFO ("Create Applications.");
@@ -323,9 +361,10 @@ int main(int argc, char *argv[])
   NS_LOG_INFO("set avg queue collector");
   for (int i = 0; i <= 1200; i++)
   {
-
-    Simulator::Schedule(MilliSeconds(100 + 100 * i), CalculateDelay);
+    Simulator::Schedule(MilliSeconds(100 + 100 * i), CalculateLen);
   }
+  
+
   NS_LOG_INFO("Run Simulation.");
   Simulator::Run();
   Simulator::Destroy();
