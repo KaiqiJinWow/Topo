@@ -90,11 +90,10 @@ static void CalculateLen()
 static void
 CalculateDelay(Ptr<const Packet> p, const Address &address)
 {
-  static int k = 0;
-  k++;
   delayJitter.RecordRx(p);
+
   Time t = delayJitter.GetLastDelay();
-  std::cout <<"Delay: "<< Simulator::Now().GetSeconds() << "\t" << t.GetMilliSeconds() << std::endl;
+  std::cout << "Delay: " << Simulator::Now().GetSeconds() << "\t" << t.GetNanoSeconds() << "ns\tsrc:" << address << std::endl;
 }
 
 static void
@@ -125,8 +124,8 @@ int main(int argc, char *argv[])
   // for selected modules; the below lines suggest how to do this
   // #if 0
   LogComponentEnable("SJTU_CNPROJECT", LOG_LEVEL_ALL);
-  LogComponentEnable("UdpEchoClientApplication", LOG_LEVEL_INFO);
-  LogComponentEnable("UdpEchoServerApplication", LOG_LEVEL_INFO);
+  // LogComponentEnable("UdpEchoClientApplication", LOG_LEVEL_INFO);
+  // LogComponentEnable("UdpEchoServerApplication", LOG_LEVEL_INFO);
 
   // #endif
 
@@ -293,6 +292,8 @@ int main(int argc, char *argv[])
     pair_num = host_pair.size() / 2;
     for (current_pair = 0; current_pair < pair_num; ++current_pair)
     {
+      if (host_pair[2 * current_pair + 1] == host_pair[2 * current_pair])
+        continue;
       client.SetAttribute("RemoteAddress", AddressValue(ipic[host_pair[2 * current_pair + 1]].GetAddress(0)));
       clientContainer = client.Install(terminals.Get(host_pair[2 * current_pair]));
       clientContainer.Start(Seconds(current_time));
@@ -301,9 +302,9 @@ int main(int argc, char *argv[])
     }
   }
 
-  std::cout<<"########  "<<clientContainer.GetN()<<std::endl;
+  std::cout << "########  " << clientContainer.GetN() << std::endl;
 
-  // for (i = 0; i < (int)clientContainer.GetN(); i++)
+  // for (i = 0; i < (int) clientContainer.GetN(); i++)
   // {
   //   clientContainer.Get(i)->TraceConnectWithoutContext("Tx", MakeCallback(&TagTx));
   // }
@@ -314,14 +315,10 @@ int main(int argc, char *argv[])
   sinkApps.Start(Seconds(0.0));
   sinkApps.Stop(Seconds(120.0));
 
-  
-
-  for (i = 0; i < 50; i++)
+  for (i = 0; i < (int)sinkApps.GetN(); i++)
   {
     sinkApps.Get(i)->TraceConnectWithoutContext("Rx", MakeCallback(&CalculateDelay));
   }
-
-
 
   /*// Create the OnOff application to send UDP datagrams of size
   // 210 bytes at a rate of 448 Kb/s from n0 to n4
@@ -363,7 +360,6 @@ int main(int argc, char *argv[])
   {
     Simulator::Schedule(MilliSeconds(100 + 100 * i), CalculateLen);
   }
-  
 
   NS_LOG_INFO("Run Simulation.");
   Simulator::Run();
