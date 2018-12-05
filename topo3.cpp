@@ -94,7 +94,7 @@ CalculateDelay(Ptr<const Packet> p, const Address &address)
     k++;
     delayJitter.RecordRx(p);
     Time t = delayJitter.GetLastDelay();
-    std::cout << "Delay: " << Simulator::Now().GetSeconds() << "\t" << t.GetMilliSeconds() << std::endl;
+    //std::cout <<"Delay: "<< Simulator::Now().GetSeconds() << "\t" << t.GetMilliSeconds() << std::endl;
 }
 
 static void
@@ -125,8 +125,8 @@ int main(int argc, char *argv[])
     // for selected modules; the below lines suggest how to do this
     // #if 0
     LogComponentEnable("SJTU_CNPROJECTzz", LOG_LEVEL_ALL);
-    LogComponentEnable("UdpEchoClientApplication", LOG_LEVEL_INFO);
-    LogComponentEnable("UdpEchoServerApplication", LOG_LEVEL_INFO);
+    //LogComponentEnable("UdpEchoClientApplication", LOG_LEVEL_INFO);
+    //LogComponentEnable("UdpEchoServerApplication", LOG_LEVEL_INFO);
 
     // #endif
 
@@ -178,12 +178,10 @@ int main(int argc, char *argv[])
     std::cout << nodes.GetN() << ' ' << std::endl;
     for (int i = 0; i < 50; i++)
     {
-        std::cout << i << std::endl;
         terminals.Add(nodes.Get(i));
     }
     for (int i = 50; i < 80; i++)
     {
-        std::cout << i << std::endl;
         routers.Add(nodes.Get(i));
     }
 
@@ -288,7 +286,7 @@ int main(int argc, char *argv[])
     ApplicationContainer clientContainer;
     int port = 1;
     UdpEchoClientHelper client(ipic[0].GetAddress(0), port);
-    client.SetAttribute("MaxPackets", UintegerValue(10));
+    client.SetAttribute("MaxPackets", UintegerValue(10000));
     client.SetAttribute("Interval", TimeValue(Seconds(0.00375)));
     client.SetAttribute("PacketSize", UintegerValue(210));
 
@@ -301,7 +299,6 @@ int main(int argc, char *argv[])
     {
         host_pair = random_pair();
         //NS_LOG_INFO ();
-        std::cout << host_pair.size() << std::endl;
         pair_num = host_pair.size() / 2;
         for (current_pair = 0; current_pair < pair_num; ++current_pair)
         {
