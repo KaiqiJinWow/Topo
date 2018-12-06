@@ -259,10 +259,8 @@ int main(int argc, char *argv[])
   {
     // p2p.SetChannelAttribute ("Delay", TimeValue(MilliSeconds(weight[i])));
     p2p.SetChannelAttribute("Delay", StringValue("2ms"));
-    if(i<50)
-      p2p.SetDeviceAttribute("DataRate", StringValue("10Mbps"));
-    else
-      p2p.SetDeviceAttribute("DataRate", StringValue("600kbps"));
+    p2p.SetDeviceAttribute("DataRate", StringValue("10Mbps"));
+    p2p.SetDeviceAttribute("InterframeGap", StringValue("0.333ms"));
     ndc[i] = p2p.Install(nc[i]);
     ndc[i].Get(1)->SetAttribute("ReceiveErrorModel", PointerValue(em));
     ndc[i].Get(0)->SetAttribute("ReceiveErrorModel", PointerValue(em));
